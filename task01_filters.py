@@ -126,7 +126,9 @@ def sobel_x_edge_detection(image):
     """
     # 将图像转换为灰度图
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    sobel_x = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+    sobel_x = np.array([[-1, -2, -1],
+                        [0, 0, 0],
+                        [1, 2, 1]])
     # 使用Sobel x卷积核进行卷积操作
     gradient_x = cv2.filter2D(gray, -1, sobel_x)
     return gradient_x
