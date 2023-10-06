@@ -38,7 +38,7 @@ def canny_edge(input_img):
     :return:
     """
     img = cv2.GaussianBlur(input_img, (3, 3), 0)  # 用高斯平滑处理原图像降噪。
-    canny = cv2.Canny(img, 50, 150)  # 最大最小阈值
+    canny = cv2.Canny(img, 0, 150)  # 最大最小阈值
     canny = cv2.convertScaleAbs(canny)
     return canny
 
@@ -49,12 +49,9 @@ def laplacian_edge(input_img):
     :param input_img:
     :return:
     """
-    gray_lap = cv2.Laplacian(input_img, cv2.CV_16S, ksize=3)
+    gray_lap = cv2.Laplacian(input_img, cv2.CV_16S, ksize=5)
     laplacian_dst = cv2.convertScaleAbs(gray_lap)
-    for i in laplacian_dst:
-        for j in i:
-            print(j)
-    return gray_lap
+    return laplacian_dst
 
 
 def main():
@@ -67,7 +64,7 @@ def main():
     cv2.imwrite('imgs/edges/sobel_absy_image.jpg', absY)
     cv2.imwrite('imgs/edges/sobel_dst_image.jpg', dst)
 
-    # 2. canny算子
+    # 2. canny 算子
     canny_img = canny_edge(input_img)
     cv2.imwrite('imgs/edges/canny_image.jpg', canny_img)
 
