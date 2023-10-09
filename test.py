@@ -37,7 +37,7 @@ class XORModel(nn.Module):
 model = XORModel()
 
 criterion = nn.MSELoss()  # 均方差误差损失
-optimizer = optim.SGD(model.parameters(), lr=0.1)
+optimizer = optim.Adam(model.parameters(), lr=0.1)
 # 训练模型
 for epoch in range(10000):  # 10000个epoch示例
     optimizer.zero_grad()
@@ -54,3 +54,10 @@ with torch.no_grad():
     predicted = model(X).round()  # 四舍五入为0或1
     print("Predicted:", predicted)
     print("Ground Truth:", y.view(-1, 1))
+
+for p in model.parameters():
+    print(p)
+
+print("*" * 10)
+
+print(model.fc1.weight)
