@@ -187,8 +187,8 @@ if __name__ == '__main__':
     edge_y = sobel_y_edge_detection(img_array)
 
     # 保存结果
-    cv2.imwrite('edge_x_image.jpg', edge_x)
-    cv2.imwrite('edge_y_image.jpg', edge_y)
+    cv2.imwrite('imgs/edge_x_image.jpg', edge_x)
+    cv2.imwrite('imgs/edge_y_image.jpg', edge_y)
 
     # # end. 保存处理后的图像
     # output_image = Image.fromarray(bilateral_img)
