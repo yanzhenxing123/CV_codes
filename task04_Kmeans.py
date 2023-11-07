@@ -3,6 +3,8 @@
 @Author : yanzx
 @Description : 分割图像
 """
+import time
+
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io
@@ -13,6 +15,7 @@ from loguru import logger
 from sklearn.cluster import SpectralClustering
 
 import matplotlib
+
 matplotlib.use('TkAgg')
 
 
@@ -67,7 +70,6 @@ def kmeans2(features, k, num_iters=100):
         if np.allclose(tmp, centers):
             break
     return assignments
-
 
 
 def kmeans_cosine(features, k, num_iters=100):
@@ -134,15 +136,37 @@ def evaluate_segmentation(mask_gt, segments):
 
 
 def main():
-    img = io.imread('car.png')
-    H, W, C = img.shape
-    features = color_features(img)
-    assignments = kmeans_cosine(features, 3)
-    segments = assignments.reshape((H, W))
-    # Display segmentation
-    plt.imshow(segments, cmap='viridis')
-    plt.axis('off')
+    # img = io.imread('car.png')
+    # H, W, C = img.shape
+    # features = color_features(img)
+    # assignments = kmeans_cosine(features, 3)
+    # segments = assignments.reshape((H, W))
+    # # Display segmentation
+    # plt.imshow(segments, cmap='viridis')
+    # plt.axis('off')
+    # plt.show()
+    start_time = time.time()
+    imgs_out = []
+    n = 50
+    for i in range(n):
+        img = io.imread(f'imgs/task04/car_raw2/car%02d.png' % (i + 1))
+        img = img[:, :, :3]
+        H, W, C = img.shape
+        features = color_features(img)
+        assignments = kmeans(features, 3)
+        segments = assignments.reshape((H, W))
+        imgs_out.append(segments)
+    fig, axs = plt.subplots(nrows=5, ncols=10, sharex=True, sharey=True, figsize=(6, 8))
+    for i in range(5):
+        for j in range(10):
+            axs[i][j].imshow(imgs_out.pop())
+            axs[i, j].axis('off')  # 关闭坐标轴
+
+    end_time = time.time()
+    logger.info(f"cost time: {end_time - start_time}s")
     plt.show()
+
+
 
 
 if __name__ == '__main__':

@@ -5,6 +5,8 @@
 """
 
 import os
+import time
+
 from PIL import Image
 import os.path
 import glob
@@ -16,10 +18,11 @@ def rename_img():
     for i, file in enumerate(files):
         # 重点在05d，这样会自动补齐5位，不足的补零
         # 为啥是0 + i，方便后面添加，把0改了就行
-        NewFileName = os.path.join(path, 'car%02d' % (1 + i) + '.png')
+        NewFileName = os.path.join(path, 'car%02d' % (19 + i) + '.png')
         OldFileName = os.path.join(path, file)
         print('第%d个文件：%s' % (i + 1, NewFileName))
         os.rename(OldFileName, NewFileName)  # 改名
+        time.sleep(0.1)
 
 
 def convertjpg(jpgfile, outdir, width=128*3, height=128*2):
