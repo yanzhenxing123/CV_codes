@@ -3,76 +3,147 @@
 @Author : yanzx
 @Description : 分割图像
 """
-
-import os
-import time
-import torch.nn as nn
-import torch
 import numpy as np
-import torchvision.transforms as transforms
-from PIL import Image
-from matplotlib import pyplot as plt
-import matplotlib
+import matplotlib.pyplot as plt
+from skimage import io
+from scipy.spatial.distance import squareform, pdist
+from skimage.util import img_as_float
+from loguru import logger
 
+from sklearn.cluster import SpectralClustering
+
+import matplotlib
 matplotlib.use('TkAgg')
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def kmeans(features, k, num_iters=100):
+    """
+    K-聚类算法实现，欧式距离
+    :param features: 图片向量
+    :param k: 聚类个数
+    :param num_iters: 迭代次数
+    :return:
+    """
+    N, D = features.shape
+    # 随机初始化k个中心
+    idxs = np.random.choice(N, size=k, replace=False)
+    centers = features[idxs]
+    assignments = np.zeros(N)
+    for n in range(num_iters):
+        f_tmp = np.tile(features, (k, 1))
+        c_tmp = np.repeat(centers, N, axis=0)
+        assignments = np.argmin(np.sum((f_tmp - c_tmp) ** 2, axis=1).reshape(k, N), axis=0)
+        tmp = centers.copy()
+        for j in range(k):
+            centers[j] = np.mean(features[assignments == j], axis=0)
+        if np.allclose(tmp, centers):
+            break
+    return assignments
 
-if __name__ == "__main__":
 
-    path_img = os.path.join(BASE_DIR, "imgs/img_1.png")
-    # path_img = os.path.join(BASE_DIR, "demo_img2.png")
-    # path_img = os.path.join(BASE_DIR, "demo_img3.png")
+def kmeans2(features, k, num_iters=100):
+    """
+    K-聚类算法实现，曼哈顿距离
+    :param features: 图片向量
+    :param k: 聚类个数
+    :param num_iters: 迭代次数
+    :return:
+    """
+    N, D = features.shape
+    print(N, D)
+    # 随机初始化k个中心
+    idxs = np.random.choice(N, size=k, replace=False)
+    centers = features[idxs]
+    print(centers.shape)
+    assignments = np.zeros(N)
+    for n in range(num_iters):
+        f_tmp = np.tile(features, (k, 1))
+        c_tmp = np.repeat(centers, N, axis=0)
+        assignments = np.argmin(np.sum(np.abs(f_tmp - c_tmp), axis=1).reshape(k, N), axis=0)
+        # assignments = np.argmin(np.sum((f_tmp - c_tmp) ** 2, axis=1).reshape(k, N), axis=0)
+        tmp = centers.copy()
+        for j in range(k):
+            centers[j] = np.mean(features[assignments == j], axis=0)
+        if np.allclose(tmp, centers):
+            break
+    return assignments
 
-    # config
-    preprocess = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
 
-    # 1. load data & model
-    input_image = Image.open(path_img).convert("RGB")
-    model = torch.hub.load('pytorch/vision', 'deeplabv3_resnet101', pretrained=True)
-    model.eval()
 
-    # 2. preprocess
-    input_tensor = preprocess(input_image)
-    input_bchw = input_tensor.unsqueeze(0)
+def kmeans_cosine(features, k, num_iters=100):
+    N, D = features.shape
+    # 随机初始化k个中心
+    idxs = np.random.choice(N, size=k, replace=False)
+    centers = features[idxs]
+    assignments = np.zeros(N)
+    for n in range(num_iters):
+        # 标准化数据
+        normalized_features = features / np.linalg.norm(features, axis=1)[:, np.newaxis]
+        normalized_centers = centers / np.linalg.norm(centers, axis=1)[:, np.newaxis]
+        # 计算余弦相似度
+        similarities = np.dot(normalized_features, normalized_centers.T)
+        # 分配数据点到最相似的簇
+        assignments = np.argmax(similarities, axis=1)
+        tmp = centers.copy()
+        for j in range(k):
+            # 更新簇中心为簇内数据点的均值
+            centers[j] = np.mean(features[assignments == j], axis=0)
+            # 标准化新的簇中心
+            centers[j] /= np.linalg.norm(centers[j])
 
-    # 3. to device
-    if torch.cuda.is_available():
-        input_bchw = input_bchw.to(device)
-        model.to(device)
+        if np.array_equal(tmp, centers):
+            break
+    return assignments
 
-    # 4. forward
-    with torch.no_grad():
-        tic = time.time()
-        print("input img tensor shape:{}".format(input_bchw.shape))
-        output_4d = model(input_bchw)['out']
-        output = output_4d[0]
-        print("pass: {:.3f}s use: {}".format(time.time() - tic, device))
-        print("output img tensor shape:{}".format(output.shape))
-    output_predictions = output.argmax(0)
 
-    # 5. visualization
-    palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-    colors = torch.as_tensor([i for i in range(21)])[:, None] * palette
-    colors = (colors % 255).numpy().astype("uint8")
+# Pixel-Level Features
+def color_features(img):
+    """
+    彩色图像转换为一维特征向量，其中每个特征向量对应一个图像像素
+    :param img:
+    :return:
+    """
+    H, W, C = img.shape
+    img = img_as_float(img)
+    features = img.reshape(H * W, C)
+    return features
 
-    # plot the semantic segmentation predictions of 21 classes in each color
-    r = Image.fromarray(output_predictions.byte().cpu().numpy()).resize(input_image.size)
-    r.putpalette(colors)
-    plt.subplot(121).imshow(r)
-    plt.subplot(122).imshow(input_image)
+
+def my_features(img):
+    H, W, C = img.shape
+    img = img_as_float(img)
+    features = img.reshape(H * W, C)
+    return features
+
+
+# Quantitative Evaluation
+def compute_accuracy(mask_gt, mask):
+    accuracy = np.mean(mask_gt == mask)
+    return accuracy
+
+
+def evaluate_segmentation(mask_gt, segments):
+    num_segments = np.max(segments) + 1
+    best_accuracy = 0
+    for i in range(num_segments):
+        mask = (segments == i).astype(int)
+        accuracy = compute_accuracy(mask_gt, mask)
+        best_accuracy = max(accuracy, best_accuracy)
+
+    return best_accuracy
+
+
+def main():
+    img = io.imread('car.png')
+    H, W, C = img.shape
+    features = color_features(img)
+    assignments = kmeans_cosine(features, 3)
+    segments = assignments.reshape((H, W))
+    # Display segmentation
+    plt.imshow(segments, cmap='viridis')
+    plt.axis('off')
     plt.show()
 
-    # appendix
-    classes = ['__background__',
-                       'aeroplane', 'bicycle', 'bird', 'boat',
-                       'bottle', 'bus', 'car', 'cat', 'chair',
-                       'cow', 'diningtable', 'dog', 'horse',
-                       'motorbike', 'person', 'pottedplant',
-                       'sheep', 'sofa', 'train', 'tvmonitor']
 
+if __name__ == '__main__':
+    main()
