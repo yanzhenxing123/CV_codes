@@ -25,7 +25,7 @@ def rename_img():
         time.sleep(0.1)
 
 
-def convertjpg(jpgfile, outdir, width=128*3, height=128*2):
+def convertjpg(jpgfile, outdir, width=128 * 3, height=128 * 2):
     img = Image.open(jpgfile)
     try:
         new_img = img.resize((width, height), Image.BILINEAR)

@@ -148,7 +148,6 @@ def sobel_y_edge_detection(image):
                         [0, 0, 0],
                         [1, 2, 1]])
 
-
     # 使用Sobel y卷积核进行卷积操作
     gradient_y = cv2.filter2D(gray, -1, sobel_y)
 
