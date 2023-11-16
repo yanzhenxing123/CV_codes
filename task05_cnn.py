@@ -3,12 +3,13 @@
 @Author : yanzx
 @Description :
 """
+import time
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
-from loguru import logger
+# from loguru import logger
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 import torch.nn.functional as F  # 激活函数
@@ -38,6 +39,10 @@ class SimpleCNN(nn.Module):
 
 # 2. 定义损失函数和优化器
 model = SimpleCNN(num_classes=15)
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"device: {device}")
+model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
@@ -50,13 +55,16 @@ transform = transforms.Compose([
 
 dataset_path = 'imgs/scene_categories'
 img_dataset = ImageFolder(root=dataset_path, transform=transform)
+
 data_loader = DataLoader(img_dataset, batch_size=32, shuffle=True)
+
 
 # 假设你有一个名为 img_dataset 的数据集
 dataset_size = len(img_dataset)
 train_size = int(0.8 * dataset_size)
 test_size = dataset_size - train_size
 train_dataset, test_dataset = random_split(img_dataset, [train_size, test_size])
+
 
 # 创建用于训练和测试的 DataLoader
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
@@ -65,11 +73,13 @@ test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 # 4. 训练模型
 num_epochs = 5
 for epoch in range(num_epochs):
+    start = time.time()
     model.train()
     total_correct = 0
     total_samples = 0
     running_loss = 0.0
     for inputs, labels in data_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
         _, predicted = torch.max(outputs, 1)
@@ -79,7 +89,8 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
     accuracy = total_correct / total_samples
-    logger.info(f'Epoch {epoch + 1}/{num_epochs}, Accuracy: {accuracy:.4f}')
+    end = time.time()
+    print(f'Epoch {epoch + 1}/{num_epochs}, Accuracy: {accuracy:.4f}, Cost time: {(end-start):.4f}')
 
 # 5. 评估模型
 model.eval()
@@ -87,6 +98,7 @@ correct = 0
 total = 0
 with torch.no_grad():
     for inputs, labels in test_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
