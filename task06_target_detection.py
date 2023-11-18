@@ -1,7 +1,7 @@
 import cv2
 
 # 打开视频文件
-video_path = f'imgs/videos/demo05.mp4'
+video_path = f'imgs/videos/raw_video/demo05.mp4'
 cap = cv2.VideoCapture(video_path)
 
 # 获取视频信息
@@ -13,7 +13,7 @@ fps = int(cap.get(cv2.CAP_PROP_FPS))
 fgbg = cv2.createBackgroundSubtractorMOG2()
 
 # 创建视频写入对象
-output_path = 'imgs/videos/processed_video/output05.mp4'
+output_path = 'imgs/videos/output/output05.mp4'
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 设置为MP4编码
 out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 

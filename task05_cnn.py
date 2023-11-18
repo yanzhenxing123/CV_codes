@@ -56,8 +56,7 @@ transform = transforms.Compose([
 dataset_path = 'imgs/scene_categories'
 img_dataset = ImageFolder(root=dataset_path, transform=transform)
 
-data_loader = DataLoader(img_dataset, batch_size=32, shuffle=True)
-
+data_loader = DataLoader(img_dataset, batch_size=128, shuffle=True)
 
 # 假设你有一个名为 img_dataset 的数据集
 dataset_size = len(img_dataset)
@@ -67,18 +66,18 @@ train_dataset, test_dataset = random_split(img_dataset, [train_size, test_size])
 
 
 # 创建用于训练和测试的 DataLoader
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
 # 4. 训练模型
-num_epochs = 5
+num_epochs = 10
 for epoch in range(num_epochs):
     start = time.time()
     model.train()
     total_correct = 0
     total_samples = 0
     running_loss = 0.0
-    for inputs, labels in data_loader:
+    for inputs, labels in train_loader:
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
